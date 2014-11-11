@@ -1782,7 +1782,6 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         this.model.description = this.model.description.replace(/(?:\r\n|\r|\n)/g, '<br />');
       }
       this.model.oauth = null;
-      log(this.model.authorizations);
       if (this.model.authorizations) {
         if (Array.isArray(this.model.authorizations)) {
           _ref5 = this.model.authorizations;
@@ -2211,7 +2210,13 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         url = response.request.url;
       }
       headers = response.headers;
-      contentType = headers && headers["Content-Type"] ? headers["Content-Type"].split(";")[0].trim() : null;
+      contentType = null;
+      if (headers) {
+        contentType = headers["Content-Type"] || headers["content-type"];
+        if (contentType) {
+          contentType = contentType.split(";")[0].trim();
+        }
+      }
       if (!content) {
         code = $('<code />').text("no content");
         pre = $('<pre class="json" />').append(code);
