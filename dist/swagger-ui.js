@@ -1986,8 +1986,12 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
           if ((o.value != null) && jQuery.trim(o.value).length > 0) {
             map[o.name] = o.value;
           }
-          if (o.type === "file") {
+          if (o.type === "file" && o.files.length > 0) {
             isFileUpload = true;
+            map[o.name] = {
+              type: 'file',
+              value: o.files[0]
+            };
           }
         }
         _ref6 = form.find("textarea");
@@ -2009,10 +2013,10 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         opts.requestContentType = $("div select[name=parameterContentType]", $(this.el)).val();
         $(".response_throbber", $(this.el)).show();
         if (isFileUpload) {
-          return this.handleFileUpload(map, form);
-        } else {
-          return this.model["do"](map, opts, this.showCompleteStatus, this.showErrorStatus, this);
+          opts.requestContentType = "multipart/form-data";
+          opts.useJQuery = true;
         }
+        return this.model["do"](map, opts, this.showCompleteStatus, this.showErrorStatus, this);
       }
     };
 

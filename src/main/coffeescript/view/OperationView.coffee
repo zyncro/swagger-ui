@@ -12,7 +12,6 @@ class OperationView extends Backbone.View
 
   initialize: (opts={}) ->
     @auths = opts.auths
-
     @
 
   mouseEnter: (e) ->
@@ -175,8 +174,11 @@ class OperationView extends Backbone.View
       for o in form.find("input")
         if(o.value? && jQuery.trim(o.value).length > 0)
           map[o.name] = o.value
-        if o.type is "file"
+        if o.type is "file" and o.files.length > 0
           isFileUpload = true
+          map[o.name] = {
+            type: 'file',
+            value: o.files[0]}
 
       for o in form.find("textarea")
         if(o.value? && jQuery.trim(o.value).length > 0)
@@ -192,95 +194,14 @@ class OperationView extends Backbone.View
 
       $(".response_throbber", $(@el)).show()
       if isFileUpload
-        @handleFileUpload map, form
-      else
-        @model.do(map, opts, @showCompleteStatus, @showErrorStatus, @)
+        opts.requestContentType = "multipart/form-data"
+        opts.useJQuery = true
+
+      #else
+      @model.do(map, opts, @showCompleteStatus, @showErrorStatus, @)
 
   success: (response, parent) ->
     parent.showCompleteStatus response
-
-  handleFileUpload: (map, form) ->
-    for o in form.serializeArray()
-      if(o.value? && jQuery.trim(o.value).length > 0)
-        map[o.name] = o.value
-
-    # requires HTML5 compatible browser
-    bodyParam = new FormData()
-    params = 0
-
-    # add params
-    for param in @model.parameters
-      if param.paramType is 'form'
-        if param.type.toLowerCase() isnt 'file' and map[param.name] != undefined
-            bodyParam.append(param.name, map[param.name])
-
-    # headers in operation
-    headerParams = {}
-    for param in @model.parameters
-      if param.paramType is 'header'
-        headerParams[param.name] = map[param.name]
-
-    # add files
-    for el in form.find('input[type~="file"]')
-      if typeof el.files[0] isnt 'undefined'
-        bodyParam.append($(el).attr('name'), el.files[0])
-        params += 1
-
-    @invocationUrl = 
-      if @model.supportHeaderParams()
-        headerParams = @model.getHeaderParams(map)
-        delete headerParams['Content-Type']
-        @model.urlify(map, false)
-      else
-        @model.urlify(map, true)
-
-    $(".request_url", $(@el)).html("<pre></pre>") 
-    $(".request_url pre", $(@el)).text(@invocationUrl);
-    
-    obj = 
-      type: @model.method
-      url: @invocationUrl
-      headers: headerParams
-      data: bodyParam
-      dataType: 'json'
-      contentType: false
-      processData: false
-      error: (data, textStatus, error) =>
-        @showErrorStatus(@wrap(data), @)
-      success: (data) =>
-        @showResponse(data, @)
-      complete: (data) =>
-        @showCompleteStatus(@wrap(data), @)
-
-    # apply authorizations
-    if window.authorizations
-      window.authorizations.apply obj
-
-    if params is 0
-      obj.data.append("fake", "true");
-
-    jQuery.ajax(obj)
-    false
-    # end of file-upload nastiness
-
-  # wraps a jquery response as a shred response
-
-  wrap: (data) ->
-    headers = {}
-    headerArray = data.getAllResponseHeaders().split("\r")
-    for i in headerArray
-      h = i.split(':')
-      if (h[0] != undefined && h[1] != undefined)
-        headers[h[0].trim()] = h[1].trim()
-
-    o = {}
-    o.content = {}
-    o.content.data = data.responseText
-    o.headers = headers
-    o.request = {}
-    o.request.url = @invocationUrl
-    o.status = data.status
-    o
 
   getSelectedValue: (select) ->
     if !select.multiple 
