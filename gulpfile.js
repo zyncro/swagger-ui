@@ -98,7 +98,10 @@ gulp.task('copy', ['less'], function() {
 
   // copy JavaScript files inside lib folder
   gulp
-    .src(['./lib/**/*.{js,map}'])
+    .src([
+      './lib/**/*.{js,map}',
+      './node_modules/js-yaml/dist/js-yaml.min.js'
+    ])
     .pipe(gulp.dest('./dist/lib'))
     .on('error', log);
 
