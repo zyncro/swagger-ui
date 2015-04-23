@@ -137,7 +137,7 @@ var Docs = {
 			$('.resource ul.endpoints').slideDown();
 			return;
 		}
-		
+
 		$('li#resource_' + resource).addClass('active');
 
 		var elem = $('li#resource_' + resource + ' ul.endpoints');
@@ -161,7 +161,7 @@ var Docs = {
 	expandOperationsForResource: function(resource) {
 		// Make sure the resource container is open..
 		Docs.expandEndpointListForResource(resource);
-		
+
 		if (resource == '') {
 			$('.resource ul.endpoints li.operation div.content').slideDown();
 			return;
@@ -824,10 +824,41 @@ HeaderView = (function(_super) {
     'click #show-wordnik-dev-icon': 'showWordnikDev',
     'click #explore': 'showCustom',
     'keyup #input_baseUrl': 'showCustomOnKeyup',
-    'keyup #input_apiKey': 'showCustomOnKeyup'
+    'keyup #input_apiKey': 'showCustomOnKeyup',
+    'click #user_login': 'doUserLogin'
   };
 
   HeaderView.prototype.initialize = function() {};
+
+  HeaderView.prototype.doUserLogin = function(e) {
+    var userName = $.trim($('#user_email').val());
+    var userPassword = $.trim($('#user_password').val());
+    var url = $('#input_baseUrl').val().replace('api-docs', 'oauth/token');
+    var data = {
+        username: userName,
+        password: userPassword,
+        grant_type: 'password',
+        client_id: 'zyncro-test',
+        client_secret: 'zyncro123456',
+        scope: 'trust'
+      };
+
+    if (!userName || !userPassword) return;
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      dataType: 'json',
+      contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+      data: data
+    }).done(function(response) {
+      console.log(response);
+      if (response.access_token) {
+          $('#input_apiKey').val(response.access_token);
+          $('#input_apiKey').change();
+        };
+    });
+  };
 
   HeaderView.prototype.showPetStore = function(e) {
     return this.trigger('update-swagger-ui', {
