@@ -3,7 +3,6 @@
 SwaggerUi.Views.HeaderView = Backbone.View.extend({
   events: {
     'click #show-pet-store-icon'    : 'showPetStore',
-    'click #show-wordnik-dev-icon'  : 'showWordnikDev',
     'click #explore'                : 'showCustom',
     'click #user_login'             : 'doUserLogin',
     'keyup #input_baseUrl'          : 'showCustomOnKeyup',
@@ -16,7 +15,7 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
     var data, url, userName, userPassword;
     userName = $.trim($('#user_email').val());
     userPassword = $.trim($('#user_password').val());
-    url = $('#input_baseUrl').val().replace('api-docs', 'oauth/token');
+    url = $('#input_baseUrl').val().replace('v2/api-docs', 'oauth/token');
     data = {
       username: userName,
       password: userPassword,
@@ -46,12 +45,6 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
   showPetStore: function(){
     this.trigger('update-swagger-ui', {
       url:'http://petstore.swagger.io/v2/swagger.json'
-    });
-  },
-
-  showWordnikDev: function(){
-    this.trigger('update-swagger-ui', {
-      url: 'http://api.wordnik.com/v4/resources.json'
     });
   },
 

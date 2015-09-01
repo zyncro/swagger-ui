@@ -9,7 +9,7 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
     'click .response_hider'   : 'hideResponse',
     'click .toggleOperation'  : 'toggleOperationContent',
     'mouseenter .api-ic'      : 'mouseEnter',
-    'mouseout .api-ic'        : 'mouseExit',
+    'dblclick .curl'          : 'selectText',
   },
 
   initialize: function(opts) {
@@ -20,6 +20,24 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
     this.nickname = this.model.nickname;
     this.model.encodedParentId = encodeURIComponent(this.parentId);
     return this;
+  },
+
+  selectText: function(event) {
+      var doc = document,
+          text = event.target.firstChild,
+          range,
+          selection;
+      if (doc.body.createTextRange) {
+          range = document.body.createTextRange();
+          range.moveToElementText(text);
+          range.select();
+      } else if (window.getSelection) {
+          selection = window.getSelection();
+          range = document.createRange();
+          range.selectNodeContents(text);
+          selection.removeAllRanges();
+          selection.addRange(range);
+      }
   },
 
   mouseEnter: function(e) {
@@ -53,11 +71,6 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
     pos.top = y;
     pos.left = x;
     elem.css(pos);
-    $(e.currentTarget.parentNode).find('#api_information_panel').show();
-  },
-
-  mouseExit: function(e) {
-    $(e.currentTarget.parentNode).find('#api_information_panel').hide();
   },
 
   // Note: copied from CoffeeScript compiled file
@@ -76,22 +89,23 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
         for (l = 0, len = modelAuths.length; l < len; l++) {
           auths = modelAuths[l];
           for (key in auths) {
-            auth = auths[key];
             for (a in this.auths) {
               auth = this.auths[a];
-              if (auth.type === 'oauth2') {
-                this.model.oauth = {};
-                this.model.oauth.scopes = [];
-                ref1 = auth.value.scopes;
-                for (k in ref1) {
-                  v = ref1[k];
-                  scopeIndex = auths[key].indexOf(k);
-                  if (scopeIndex >= 0) {
-                    o = {
-                      scope: k,
-                      description: v
-                    };
-                    this.model.oauth.scopes.push(o);
+              if (key === auth.name) {
+                if (auth.type === 'oauth2') {
+                  this.model.oauth = {};
+                  this.model.oauth.scopes = [];
+                  ref1 = auth.value.scopes;
+                  for (k in ref1) {
+                    v = ref1[k];
+                    scopeIndex = auths[key].indexOf(k);
+                    if (scopeIndex >= 0) {
+                      o = {
+                        scope: k,
+                        description: v
+                      };
+                      this.model.oauth.scopes.push(o);
+                    }
                   }
                 }
               }
@@ -125,8 +139,8 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
         schemaObj = this.model.responses[code].schema;
         if (schemaObj && schemaObj.$ref) {
           schema = schemaObj.$ref;
-          if (schema.indexOf('#/definitions/') === 0) {
-            schema = schema.substring('#/definitions/'.length);
+          if (schema.indexOf('#/definitions/') !== -1) {
+            schema = schema.replace(/^.*#\/definitions\//, '');
           }
         }
         this.model.responseMessages.push({
@@ -159,6 +173,10 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
         isParam: false,
         signature: this.model.responseClassSignature
       };
+    }
+    var opts = this.options.swaggerOptions;
+    if (opts.showRequestHeaders) {
+      this.model.showRequestHeaders = true;
     }
     $(this.el).html(Handlebars.templates.operation(this.model));
     if (signatureModel) {
@@ -241,7 +259,7 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
   // Note: copied from CoffeeScript compiled file
   // TODO: redactor
   submitOperation: function(e) {
-    var error_free, form, isFileUpload, l, len, len1, len2, m, map, n, o, opts, ref1, ref2, ref3, val;
+    var error_free, form, isFileUpload, map, opts;
     if (e !== null) {
       e.preventDefault();
     }
@@ -290,131 +308,84 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
       }
     });
     if (error_free) {
-      map = {};
+      map = this.getInputMap(form);
+      isFileUpload = this.isFileUpload(form);
       opts = {
         parent: this
       };
-      if(this.options.swaggerOptions) {
+      if (this.options.swaggerOptions) {
         for(var key in this.options.swaggerOptions) {
           opts[key] = this.options.swaggerOptions[key];
-        }
-      }
-      isFileUpload = false;
-      ref1 = form.find('input');
-      for (l = 0, len = ref1.length; l < len; l++) {
-        o = ref1[l];
-        if ((o.value !== null) && jQuery.trim(o.value).length > 0) {
-          map[o.name] = o.value;
-        }
-        if (o.type === 'file') {
-          map[o.name] = o.files[0];
-          isFileUpload = true;
-        }
-      }
-      ref2 = form.find('textarea');
-      for (m = 0, len1 = ref2.length; m < len1; m++) {
-        o = ref2[m];
-        val = this.getTextAreaValue(o);
-        if ((val !== null) && jQuery.trim(val).length > 0) {
-          map[o.name] = val;
-        }
-      }
-      ref3 = form.find('select');
-      for (n = 0, len2 = ref3.length; n < len2; n++) {
-        o = ref3[n];
-        val = this.getSelectedValue(o);
-        if ((val !== null) && jQuery.trim(val).length > 0) {
-          map[o.name] = val;
         }
       }
       opts.responseContentType = $('div select[name=responseContentType]', $(this.el)).val();
       opts.requestContentType = $('div select[name=parameterContentType]', $(this.el)).val();
       $('.response_throbber', $(this.el)).show();
       if (isFileUpload) {
-        return this.handleFileUpload(map, form);
+        $('.request_url', $(this.el)).html('<pre></pre>');
+        $('.request_url pre', $(this.el)).text(this.invocationUrl);
+
+        opts.useJQuery = true;
+        map.parameterContentType = 'multipart/form-data';
+
+        return this.model.execute(map, opts, this.showCompleteStatus, this.showErrorStatus, this);
       } else {
+        this.map = map;
         return this.model.execute(map, opts, this.showCompleteStatus, this.showErrorStatus, this);
       }
     }
+  },
+
+  getInputMap: function (form) {
+    var map, ref1, l, len, o, ref2, m, len1, val, ref3, n, len2;
+    map = {};
+    ref1 = form.find('input');
+    for (l = 0, len = ref1.length; l < len; l++) {
+      o = ref1[l];
+      if ((o.value !== null) && jQuery.trim(o.value).length > 0) {
+        map[o.name] = o.value;
+      }
+      if (o.type === 'file') {
+        map[o.name] = o.files[0];
+      }
+    }
+    ref2 = form.find('textarea');
+    for (m = 0, len1 = ref2.length; m < len1; m++) {
+      o = ref2[m];
+      val = this.getTextAreaValue(o);
+      if ((val !== null) && jQuery.trim(val).length > 0) {
+        map[o.name] = val;
+      }
+    }
+    ref3 = form.find('select');
+    for (n = 0, len2 = ref3.length; n < len2; n++) {
+      o = ref3[n];
+      val = this.getSelectedValue(o);
+      if ((val !== null) && jQuery.trim(val).length > 0) {
+        map[o.name] = val;
+      }
+    }
+    return map;
+  },
+
+  isFileUpload: function (form) {
+    var ref1, l, len, o;
+    var isFileUpload = false;
+    ref1 = form.find('input');
+    for (l = 0, len = ref1.length; l < len; l++) {
+      o = ref1[l];
+      if (o.type === 'file') {
+        isFileUpload = true;
+      }
+    }
+    return isFileUpload;
   },
 
   success: function(response, parent) {
     parent.showCompleteStatus(response);
   },
 
-  // Note: This is compiled code
-  // TODO: Refactor
-  handleFileUpload: function(map, form) {
-    var bodyParam, el, headerParams, l, len, len1, len2, len3, m, n, o, p, param, params, ref1, ref2, ref3, ref4;
-    ref1 = form.serializeArray();
-    for (l = 0, len = ref1.length; l < len; l++) {
-      o = ref1[l];
-      if ((o.value !== null) && jQuery.trim(o.value).length > 0) {
-        map[o.name] = o.value;
-      }
-    }
-    bodyParam = new FormData();
-    params = 0;
-    ref2 = this.model.parameters;
-    for (m = 0, len1 = ref2.length; m < len1; m++) {
-      param = ref2[m];
-      if (param.paramType === 'form' || param['in'] === 'formData') {
-        if (param.type.toLowerCase() !== 'file' && map[param.name] !== void 0) {
-          bodyParam.append(param.name, map[param.name]);
-        }
-      }
-    }
-    headerParams = {};
-    ref3 = this.model.parameters;
-    for (n = 0, len2 = ref3.length; n < len2; n++) {
-      param = ref3[n];
-      if (param.paramType === 'header') {
-        headerParams[param.name] = map[param.name];
-      }
-    }
-    ref4 = form.find('input[type~="file"]');
-    for (p = 0, len3 = ref4.length; p < len3; p++) {
-      el = ref4[p];
-      if (typeof el.files[0] !== 'undefined') {
-        bodyParam.append($(el).attr('name'), el.files[0]);
-        params += 1;
-      }
-    }
-    this.invocationUrl = this.model.supportHeaderParams() ? (headerParams = this.model.getHeaderParams(map), delete headerParams['Content-Type'], this.model.urlify(map, false)) : this.model.urlify(map, true);
-    $('.request_url', $(this.el)).html('<pre></pre>');
-    $('.request_url pre', $(this.el)).text(this.invocationUrl);
-
-    // TODO: don't use jQuery. Use SwaggerJS for handling the call.
-    var obj = {
-      type: this.model.method,
-      url: this.invocationUrl,
-      headers: headerParams,
-      data: bodyParam,
-      dataType: 'json',
-      contentType: false,
-      processData: false,
-      error: (function(_this) {
-        return function(data) {
-          return _this.showErrorStatus(_this.wrap(data), _this);
-        };
-      })(this),
-      success: (function(_this) {
-        return function(data) {
-          return _this.showResponse(data, _this);
-        };
-      })(this),
-      complete: (function(_this) {
-        return function(data) {
-          return _this.showCompleteStatus(_this.wrap(data), _this);
-        };
-      })(this)
-    };
-    jQuery.ajax(obj);
-    return false;
-    // end of file-upload nastiness
-  },
   // wraps a jquery response as a shred response
-
   wrap: function(data) {
    var h, headerArray, headers, i, l, len, o;
     headers = {};
@@ -669,20 +640,38 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
     $('.response', $(this.el)).slideDown();
     $('.response_hider', $(this.el)).show();
     $('.response_throbber', $(this.el)).hide();
-    var response_body_el = $('.response_body', $(this.el))[0];
+
+
+    //adds curl output
+    var curlCommand = this.model.asCurl(this.map);
+    curlCommand = curlCommand.replace('!', '&#33;');
+    $( '.curl', $(this.el)).html('<pre>' + curlCommand + '</pre>');
 
     // only highlight the response if response is less than threshold, default state is highlight response
     var opts = this.options.swaggerOptions;
-    if (opts.highlightSizeThreshold && response.data.length > opts.highlightSizeThreshold) {
+
+    if (opts.showRequestHeaders) {
+      var form = $('.sandbox', $(this.el)),
+        map = this.getInputMap(form),
+        requestHeaders = this.model.getHeaderParams(map);
+      delete requestHeaders['Content-Type'];
+      $('.request_headers', $(this.el)).html('<pre>' + _.escape(JSON.stringify(requestHeaders, null, '  ')).replace(/\n/g, '<br>') + '</pre>');
+    }
+
+    var response_body_el = $('.response_body', $(this.el))[0];
+    // only highlight the response if response is less than threshold, default state is highlight response
+    if (opts.highlightSizeThreshold && typeof response.data !== 'undefined' && response.data.length > opts.highlightSizeThreshold) {
       return response_body_el;
     } else {
       return hljs.highlightBlock(response_body_el);
     }
   },
 
-  toggleOperationContent: function() {
+  toggleOperationContent: function (event) {
     var elem = $('#' + Docs.escapeResourceName(this.parentId + '_' + this.nickname + '_content'));
     if (elem.is(':visible')){
+      event.preventDefault();
+      $.bbq.pushState('#/', 2);
       Docs.collapseOperation(elem);
     } else {
       Docs.expandOperation(elem);

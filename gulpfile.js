@@ -92,7 +92,8 @@ gulp.task('less', ['clean'], function() {
     .src([
       './src/main/less/screen.less',
       './src/main/less/print.less',
-      './src/main/less/reset.less'
+      './src/main/less/reset.less',
+      './src/main/less/style.less'
     ])
     .pipe(less())
     .on('error', log)
@@ -110,6 +111,12 @@ gulp.task('copy', ['less'], function() {
   gulp
     .src(['./lib/**/*.{js,map}'])
     .pipe(gulp.dest('./dist/lib'))
+    .on('error', log);
+
+  // copy `lang` for translations
+  gulp
+    .src(['./lang/**/*.js'])
+    .pipe(gulp.dest('./dist/lang'))
     .on('error', log);
 
   // copy all files inside html folder
