@@ -12,17 +12,21 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
   initialize: function(){},
 
   doUserLogin: function () {
-    var data, url, userName, userPassword;
+    var data, url, userName, userPassword, userGrantType, userClientId, userClientSecret, userScope;
     userName = $.trim($('#user_email').val());
     userPassword = $.trim($('#user_password').val());
+    userGrantType = $.trim($('#grant_type').val());
+    userClientId = $.trim($('#client_id').val());
+    userClientSecret = $.trim($('#client_secret').val());
+    userScope = $.trim($('#scope').val());
     url = $('#input_baseUrl').val().replace('v2/api-docs', 'oauth/token');
     data = {
       username: userName,
       password: userPassword,
-      grant_type: 'password',
-      client_id: 'zyncro-test',
-      client_secret: 'zyncro123456',
-      scope: 'trust'
+      grant_type: userGrantType,
+      client_id: userClientId,
+      client_secret: userClientSecret,
+      scope: userScope
     };
     if (!userName || !userPassword) {
       return;
