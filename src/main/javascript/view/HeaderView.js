@@ -28,9 +28,6 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
       client_secret: userClientSecret,
       scope: userScope
     };
-    if (!userName || !userPassword) {
-      return;
-    }
     return $.ajax({
       url: url,
       type: 'POST',
