@@ -31105,7 +31105,11 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
     userClientId = $.trim($('#client_id').val());
     userClientSecret = $.trim($('#client_secret').val());
     userScope = $.trim($('#scope').val());
-    url = $('#input_baseUrl').val().replace('v2/api-docs', 'oauth/token');
+
+    var a = document.createElement('a');
+    a.href = $('#input_baseUrl').val();
+    url = a.protocol + '//' + a.hostname + '/authorization-service/oauth/token';
+
     data = {
       username: userName,
       password: userPassword,
@@ -31114,6 +31118,7 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
       client_secret: userClientSecret,
       scope: userScope
     };
+
     return $.ajax({
       url: url,
       type: 'POST',
