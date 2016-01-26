@@ -22,7 +22,11 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
 
     var a = document.createElement('a');
     a.href = $('#input_baseUrl').val();
-    url = a.protocol + '//' + a.hostname + '/authorization-service/oauth/token';
+    var path = '';
+    if (a.pathname.split('/')[1] === 'zyncro') {
+      path = '/zyncro';
+    }
+    url = a.protocol + '//' + a.hostname + path + '/oauth/token';
 
     data = {
       username: userName,

@@ -130,10 +130,16 @@
     <input value="zyncro123456" id="client_secret" type="text" style="width:200px;height:17px;padding:3px;"/>
     <br>
     <label style="font-size:14px;display:block;float:left;width:100px;height:17px;padding:3px;">grant_type</label>
-    <input value="password" id="grant_type" type="text" style="width:200px;height:17px;padding:3px;"/>
+    <select id="grant_type" style="width:210px;margin:2.5px 0px;">
+        <option value="password">password</option>
+        <option value="client_credentials">client_credentials</option>
+    </select>
     <br>
     <label style="font-size:14px;display:block;float:left;width:100px;height:17px;padding:3px;">scope</label>
-    <input value="trust" id="scope" type="text" style="width:200px;height:17px;padding:3px;"/>
+    <select id="scope" style="width:210px;margin:2.5px 0px;">
+        <option value="trust">trust</option>
+        <option value="administration">administration</option>
+    </select>
     <br>
     <label style="font-size:14px;display:block;float:left;width:100px;height:17px;padding:3px;"></label>
     <input style="display: inline; text-decoration: none; font-weight: bold;
