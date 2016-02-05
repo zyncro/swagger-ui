@@ -31158,7 +31158,13 @@ SwaggerUi.Views.HeaderView = Backbone.View.extend({
     if (a.pathname.split('/')[1] === 'zyncro') {
       path = '/zyncro';
     }
-    url = a.protocol + '//' + a.hostname + path + '/oauth/token';
+
+    var port = '';
+    if (a.hostname.indexOf('localhost') !== -1) {
+        port = ':10000';
+    }
+
+    url = a.protocol + '//' + a.hostname + port + path + '/oauth/token';
 
     data = {
       username: userName,
